@@ -1,21 +1,13 @@
+
 /**
  * Run this from your project root with:
  *   node scripts/debug-scrapers.js
  *
- * It fetches the raw HTML each scraper would get for a test query on
- * every store, and reports:
+ * Checks raw HTML from each store and reports:
  *   - HTTP status
- *   - total HTML length
- *   - whether any of that store's product-card selector hints appear
- *     anywhere in the raw HTML at all
- *
- * This tells us, per store, which of three situations we're in:
- *   1. Selectors are just wrong/outdated  -> HTML is large and DOES
- *      contain some product-ish text, but not matching our selectors.
- *   2. The site is a JS-rendered shell    -> HTML is small/mostly
- *      script tags, no product text anywhere.
- *   3. We're being blocked                -> status isn't 200, or the
- *      HTML is a captcha/"unusual traffic" page.
+ *   - Total HTML length
+ *   - Whether selector hints appear
+ *   - Whether the site is blocking requests
  */
 
 const axios = require("axios");
@@ -28,7 +20,13 @@ const HEADERS = {
 
 const QUERY = "laptop";
 
-const SITES = [
+interface Site {
+  name: string;
+  url: string;
+  hint: string;
+}
+
+const SITES: Site[] = [
   {
     name: "Amazon",
     url: `https://www.amazon.in/s?k=${encodeURIComponent(QUERY)}`,
@@ -68,43 +66,83 @@ const SITES = [
   },
 ];
 
-async function check(site) {
+async function check(site: Site): Promise<void> {
   try {
     const res = await axios.get(site.url, {
       headers: HEADERS,
       timeout: 10000,
-      validateStatus: () => true, // don't throw on 403/503, we want to see it
+      validateStatus: () => true,
     });
 
-    const html = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
+    const html =
+      typeof res.data === "string"
+        ? res.data
+        : JSON.stringify(res.data) ?? "";
+
     const looksBlocked =
-      /captcha|unusual traffic|access denied|are you a robot/i.test(html);
+      /captcha|unusual traffic|access denied|are you a robot/i.test(
+        html
+      );
+
     const hasHint = html.includes(site.hint);
-    const scriptTagCount = (html.match(/<script/g) || []).length;
+
+    const scriptTagCount =
+      (html.match(/<script/g) || []).length;
 
     console.log(`\n=== ${site.name} ===`);
+
     console.log("HTTP status:", res.status);
-    console.log("HTML length:", html.length, "chars");
-    console.log("Script tags found:", scriptTagCount);
-    console.log(`Contains "${site.hint}" (our selector hint):`, hasHint);
-    console.log("Looks like a block/CAPTCHA page:", looksBlocked);
+
+    console.log(
+      "HTML length:",
+      html.length,
+      "chars"
+    );
+
+    console.log(
+      "Script tags found:",
+      scriptTagCount
+    );
+
+    console.log(
+      `Contains "${site.hint}" (our selector hint):`,
+      hasHint
+    );
+
+    console.log(
+      "Looks like a block/CAPTCHA page:",
+      looksBlocked
+    );
 
     if (!hasHint && !looksBlocked && html.length < 50000) {
       console.log(
         "-> Likely a JS-rendered shell (small HTML, lots of scripts, no product markup)."
       );
     } else if (!hasHint && looksBlocked) {
-      console.log("-> Likely being blocked by anti-bot protection.");
+      console.log(
+        "-> Likely being blocked by anti-bot protection."
+      );
     } else if (!hasHint) {
       console.log(
         "-> HTML is present but selector hint not found — selectors are probably outdated."
       );
     } else {
-      console.log("-> Selector hint found — scraper should be working for this site.");
+      console.log(
+        "-> Selector hint found — scraper should be working for this site."
+      );
     }
-  } catch (err) {
+  } catch (err: unknown) {
     console.log(`\n=== ${site.name} ===`);
-    console.log("Request failed entirely:", err.message);
+
+    const errorMessage =
+      err instanceof Error
+        ? err.message
+        : String(err);
+
+    console.log(
+      "Request failed entirely:",
+      errorMessage
+    );
   }
 }
 

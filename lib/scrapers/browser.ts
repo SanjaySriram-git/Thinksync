@@ -65,7 +65,6 @@ async function applyStealthTweaks(page: Page): Promise<void> {
     });
 
     const originalQuery = window.navigator.permissions.query;
-    // @ts-expect-error - narrowing the type here isn't worth the noise
     window.navigator.permissions.query = (parameters) =>
       parameters.name === "notifications"
         ? Promise.resolve({

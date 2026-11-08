@@ -276,6 +276,7 @@ function FloatingModules() {
    NEON ARC
 ============================================================ */
 
+
 function NeonArc() {
   const lineRef = useRef<THREE.Group>(null);
 
@@ -285,28 +286,50 @@ function NeonArc() {
     for (let i = 0; i <= 100; i++) {
       const t = i / 100;
 
-      const x =
-        THREE.MathUtils.lerp(
-          -6.8,
-          6.8,
-          t
-        );
+      const x = THREE.MathUtils.lerp(-6.8, 6.8, t);
 
-      const y =
-        -0.45 +
-        Math.sin(t * Math.PI) * 2.35;
+      const y = -0.45 + Math.sin(t * Math.PI) * 2.35;
 
-      const z =
-        -0.4 +
-        Math.sin(t * Math.PI) * 0.7;
+      const z = -0.4 + Math.sin(t * Math.PI) * 0.7;
 
-      result.push(
-        new THREE.Vector3(x, y, z)
-      );
+      result.push(new THREE.Vector3(x, y, z));
     }
 
     return result;
   }, []);
+
+  const geometry = useMemo(() => {
+    return new THREE.BufferGeometry().setFromPoints(points);
+  }, [points]);
+
+  const lines = useMemo(() => {
+    return [
+      new THREE.Line(
+        geometry,
+        new THREE.LineBasicMaterial({
+          color: "#ffffff",
+          transparent: true,
+          opacity: 0.92,
+        })
+      ),
+      new THREE.Line(
+        geometry,
+        new THREE.LineBasicMaterial({
+          color: "#22d3ee",
+          transparent: true,
+          opacity: 0.32,
+        })
+      ),
+      new THREE.Line(
+        geometry,
+        new THREE.LineBasicMaterial({
+          color: "#8b5cf6",
+          transparent: true,
+          opacity: 0.18,
+        })
+      ),
+    ];
+  }, [geometry]);
 
   useFrame((state) => {
     if (!lineRef.current) return;
@@ -322,49 +345,13 @@ function NeonArc() {
 
   return (
     <group ref={lineRef}>
-
-      <line>
-        <bufferGeometry
-          attach="geometry"
-          setFromPoints={points}
-        />
-
-        <lineBasicMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.92}
-        />
-      </line>
-
-      <line scale={[1.01, 1.01, 1.01]}>
-        <bufferGeometry
-          attach="geometry"
-          setFromPoints={points}
-        />
-
-        <lineBasicMaterial
-          color="#22d3ee"
-          transparent
-          opacity={0.32}
-        />
-      </line>
-
-      <line scale={[1.02, 1.02, 1.02]}>
-        <bufferGeometry
-          attach="geometry"
-          setFromPoints={points}
-        />
-
-        <lineBasicMaterial
-          color="#8b5cf6"
-          transparent
-          opacity={0.18}
-        />
-      </line>
-
+      <primitive object={lines[0]} />
+      <primitive object={lines[1]} scale={1.01} />
+      <primitive object={lines[2]} scale={1.02} />
     </group>
   );
 }
+
 
 /* ============================================================
    ENERGY PARTICLES
