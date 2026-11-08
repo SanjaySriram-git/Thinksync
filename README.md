@@ -19,3 +19,7 @@ To use the components in your app, import them as follows:
 ```tsx
 import { Button } from "@/components/ui/button";
 ```
+
+# Thinksync
+Explored the supabase , next.js and react new learnings and new experiences
+>>>>>>> e6a99dc055ca013b3469fe3cedfeef73d2c93abd
